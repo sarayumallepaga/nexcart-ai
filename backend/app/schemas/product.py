@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 from pydantic import BaseModel
 
 
@@ -10,3 +12,7 @@ class Product(BaseModel):
     rating: float
     store: str
     image: str
+    description: str
+    specifications: Dict[str, str]
+    warranty: str
+    reviews: List[str]

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Product(BaseModel):
-    id: int
+    id: str
     name: str
     brand: str
     category: str

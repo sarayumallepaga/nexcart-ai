@@ -1,17 +1,15 @@
 from fastapi import HTTPException
 
-from app.database.products import products
+from app.database.mongodb import products_collection
+from app.schemas.product_schema import product_serializer
 
 
 def compare_products(product_ids: list[int]):
     selected_products = []
 
-    # Find products by ID
+    # Fetch products from MongoDB
     for product_id in product_ids:
-        product = next(
-            (p for p in products if p["id"] == product_id),
-            None
-        )
+        product = products_collection.find_one({"id": product_id})
 
         if product is None:
             raise HTTPException(
@@ -19,9 +17,9 @@ def compare_products(product_ids: list[int]):
                 detail=f"Product with ID {product_id} not found"
             )
 
-        selected_products.append(product)
+        selected_products.append(product_serializer(product))
 
-    # For Sprint 3, compare only two products
+    # Compare only two products
     if len(selected_products) != 2:
         raise HTTPException(
             status_code=400,

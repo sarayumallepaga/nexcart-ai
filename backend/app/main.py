@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.compare import router as compare_router
 
 from app.api.routes.search import router as search_router
-
+from app.api.routes.ai_compare import router as ai_compare_router
+from app.api.routes.product import router as product_router
+from app.api.routes.review_summary import router as review_router
 app = FastAPI(
     title="NexCart AI",
     description="Agentic Shopping Intelligence Platform",
@@ -19,8 +21,11 @@ app.add_middleware(
 )
 
 app.include_router(search_router)
-
 app.include_router(compare_router)
+app.include_router(ai_compare_router)
+app.include_router(product_router)
+app.include_router(review_router)
+
 
 
 @app.get("/")

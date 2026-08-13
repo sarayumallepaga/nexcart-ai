@@ -1,4 +1,5 @@
-from app.database.products import products
+from app.database.mongodb import products_collection
+from app.schemas.product_schema import products_serializer
 
 
 def search_products(
@@ -9,40 +10,38 @@ def search_products(
     max_price=None,
     min_rating=None,
 ):
-    results = []
+    mongo_query = {}
 
-    query = query.lower()
+    # Search by name, brand or category
+    if query:
+        mongo_query["$or"] = [
+            {"name": {"$regex": query, "$options": "i"}},
+            {"brand": {"$regex": query, "$options": "i"}},
+            {"category": {"$regex": query, "$options": "i"}},
+        ]
 
-    for product in products:
+    # Brand filter
+    if brand:
+        mongo_query["brand"] = {"$regex": f"^{brand}$", "$options": "i"}
 
-        if query:
-            if (
-                query not in product["name"].lower()
-                and query not in product["brand"].lower()
-                and query not in product["category"].lower()
-            ):
-                continue
+    # Category filter
+    if category:
+        mongo_query["category"] = {"$regex": f"^{category}$", "$options": "i"}
 
-        if brand:
-            if product["brand"].lower() != brand.lower():
-                continue
-
-        if category:
-            if product["category"].lower() != category.lower():
-                continue
+    # Price filter
+    if min_price is not None or max_price is not None:
+        mongo_query["price"] = {}
 
         if min_price is not None:
-            if product["price"] < min_price:
-                continue
+            mongo_query["price"]["$gte"] = min_price
 
         if max_price is not None:
-            if product["price"] > max_price:
-                continue
+            mongo_query["price"]["$lte"] = max_price
 
-        if min_rating is not None:
-            if product["rating"] < min_rating:
-                continue
+    # Rating filter
+    if min_rating is not None:
+        mongo_query["rating"] = {"$gte": min_rating}
 
-        results.append(product)
+    products = products_collection.find(mongo_query)
 
-    return results
+    return products_serializer(products)

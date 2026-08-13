@@ -1,19 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from app.schemas.product import Product
-from app.services.product_service import get_product_by_id
+from app.services.product_service import (
+    get_all_products,
+    get_product,
+)
 
 router = APIRouter()
 
 
-@router.get("/product/{product_id}", response_model=Product)
-def get_product(product_id: int):
-    product = get_product_by_id(product_id)
+@router.get("/products")
+def all_products():
+    return get_all_products()
 
-    if product is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Product not found"
-        )
 
-    return product
+@router.get("/products/{product_id}")
+def product(product_id: str):
+    return get_product(product_id)

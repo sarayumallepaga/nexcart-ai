@@ -1,9 +1,24 @@
-from app.database.products import products
+from fastapi import HTTPException
+
+from app.database.mongodb import products_collection
+from app.schemas.product_schema import (
+    product_serializer,
+    products_serializer,
+)
 
 
-def get_product_by_id(product_id: int):
-    for product in products:
-        if product["id"] == product_id:
-            return product
+def get_all_products():
+    products = products_collection.find()
+    return products_serializer(products)
 
-    return None
+
+def get_product(product_id: str):
+    product = products_collection.find_one({"id": int(product_id)})
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="Product not found",
+        )
+
+    return product_serializer(product)

@@ -107,3 +107,19 @@ def get_alternatives(product_id):
         )
 
     return response.json()
+
+def shopping_chat(message):
+
+    response = requests.post(
+        f"{API_URL}/ai/chat",
+        json={
+            "message": message,
+        },
+    )
+
+    if not response.ok:
+        raise Exception(
+            f"Failed to get AI response ({response.status_code})"
+        )
+
+    return response.json()

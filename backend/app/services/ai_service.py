@@ -684,9 +684,7 @@ Return only JSON.
 # SHOPPING CHAT
 # ==========================================
 
-def shopping_chat(
-    user_query: str
-):
+def shopping_chat(user_query: str):
 
     products = list(
         db["products"].find(
@@ -706,18 +704,45 @@ User Question:
 
 {user_query}
 
-Answer naturally.
+Analyze the user's requirements carefully.
 
-If recommending products:
+If the user is asking for product recommendations:
+- recommend only products from the catalog
+- consider budget, category, rating and specifications
+- explain why each recommended product is suitable
+- mention price and rating
+- recommend up to 3 products
 
-- explain why
-- compare if needed
-- mention prices
-- mention ratings
+If the user is asking a general shopping question, answer naturally.
 
-Do not invent products.
+Respond ONLY in valid JSON.
 
-Only use the products provided.
+For product recommendations use this format:
+
+{{
+    "response": "A natural explanation of your recommendation.",
+    "recommended_products": [
+        {{
+            "name": "Exact product name from catalog",
+            "reason": "Why this product is suitable."
+        }}
+    ]
+}}
+
+For a general question use:
+
+{{
+    "response": "Your answer here.",
+    "recommended_products": []
+}}
+
+IMPORTANT:
+- Do not invent products.
+- Product names must exactly match the catalog.
+- Only recommend products that exist in the catalog.
+- Return ONLY valid JSON.
+- Do not use markdown.
+- Do not use ```json.
 """
 
     response = client.chat.completions.create(
@@ -728,9 +753,17 @@ Only use the products provided.
                 "content": prompt,
             }
         ],
-        temperature=0.4,
+        temperature=0.3,
     )
 
-    return {
-        "response": response.choices[0].message.content
-    }
+    raw_response = response.choices[0].message.content
+
+    try:
+        return json.loads(raw_response)
+
+    except json.JSONDecodeError:
+
+        return {
+            "response": raw_response,
+            "recommended_products": []
+        }

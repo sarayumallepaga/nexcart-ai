@@ -1,11 +1,13 @@
 import streamlit as st
 
 from styles import load_styles
+
 from api import (
     login_user,
     get_all_products,
     shopping_chat,
 )
+
 from components import product_card
 
 
@@ -206,6 +208,10 @@ if st.button(
 
             try:
 
+                # ----------------------------------
+                # Get AI response
+                # ----------------------------------
+
                 chat_result = shopping_chat(
                     chat_query
                 )
@@ -215,6 +221,17 @@ if st.button(
                     "Sorry, I couldn't generate a response.",
                 )
 
+                recommended_products = (
+                    chat_result.get(
+                        "recommended_products",
+                        []
+                    )
+                )
+
+                # ----------------------------------
+                # AI RESPONSE
+                # ----------------------------------
+
                 st.markdown(
                     "### ✦ NexCart AI"
                 )
@@ -222,6 +239,78 @@ if st.button(
                 st.info(
                     ai_response
                 )
+
+                # ----------------------------------
+                # RECOMMENDED PRODUCTS
+                # ----------------------------------
+
+                if recommended_products:
+
+                    st.markdown(
+                        "### Recommended for you"
+                    )
+
+                    st.caption(
+                        "Based on your requirements, "
+                        "NexCart thinks these products "
+                        "are worth considering."
+                    )
+
+                    recommendation_cols = (
+                        st.columns(
+                            min(
+                                3,
+                                len(
+                                    recommended_products
+                                )
+                            )
+                        )
+                    )
+
+                    for index, product in enumerate(
+                        recommended_products
+                    ):
+
+                        with recommendation_cols[
+                            index
+                            % len(
+                                recommendation_cols
+                            )
+                        ]:
+
+                            # ----------------------------------
+                            # Product card
+                            # ----------------------------------
+
+                            product_card(
+                                product
+                            )
+
+                            # ----------------------------------
+                            # AI reason
+                            # ----------------------------------
+
+                            reason = product.get(
+                                "ai_reason",
+                                ""
+                            )
+
+                            if reason:
+
+                                st.caption(
+                                    "✦ Why NexCart recommends it"
+                                )
+
+                                st.write(
+                                    reason
+                                )
+
+                else:
+
+                    st.caption(
+                        "NexCart did not find a specific "
+                        "product recommendation."
+                    )
 
             except Exception as error:
 
@@ -422,7 +511,9 @@ try:
                 index % 3
             ]:
 
-                product_card(product)
+                product_card(
+                    product
+                )
 
     else:
 

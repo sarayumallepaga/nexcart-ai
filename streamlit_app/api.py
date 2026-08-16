@@ -4,7 +4,12 @@ import requests
 API_URL = "http://127.0.0.1:8000"
 
 
+# ==========================================
+# AUTH
+# ==========================================
+
 def login_user(email, password):
+
     response = requests.post(
         f"{API_URL}/auth/login",
         data={
@@ -14,10 +19,18 @@ def login_user(email, password):
     )
 
     if not response.ok:
+
         try:
+
             data = response.json()
-            message = data.get("detail", "Login failed")
+
+            message = data.get(
+                "detail",
+                "Login failed"
+            )
+
         except Exception:
+
             message = "Login failed"
 
         raise Exception(message)
@@ -25,7 +38,12 @@ def login_user(email, password):
     return response.json()
 
 
+# ==========================================
+# PRODUCTS
+# ==========================================
+
 def get_all_products(token):
+
     response = requests.get(
         f"{API_URL}/products",
         headers={
@@ -34,14 +52,20 @@ def get_all_products(token):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to fetch products ({response.status_code})"
+            f"Failed to fetch products "
+            f"({response.status_code})"
         )
 
     return response.json()
 
 
-def get_product_by_id(product_id, token):
+def get_product_by_id(
+    product_id,
+    token
+):
+
     response = requests.get(
         f"{API_URL}/products/{product_id}",
         headers={
@@ -50,11 +74,18 @@ def get_product_by_id(product_id, token):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to fetch product ({response.status_code})"
+            f"Failed to fetch product "
+            f"({response.status_code})"
         )
 
     return response.json()
+
+
+# ==========================================
+# AI BUY ADVICE
+# ==========================================
 
 def get_buy_advice(product_id):
 
@@ -63,11 +94,18 @@ def get_buy_advice(product_id):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to get AI advice ({response.status_code})"
+            f"Failed to get AI advice "
+            f"({response.status_code})"
         )
 
     return response.json()
+
+
+# ==========================================
+# AI REVIEW SUMMARY
+# ==========================================
 
 def get_review_summary(product_id):
 
@@ -76,11 +114,18 @@ def get_review_summary(product_id):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to get review summary ({response.status_code})"
+            f"Failed to get review summary "
+            f"({response.status_code})"
         )
 
     return response.json()
+
+
+# ==========================================
+# AI PRICE PREDICTION
+# ==========================================
 
 def get_price_prediction(product_id):
 
@@ -89,11 +134,18 @@ def get_price_prediction(product_id):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to get price prediction ({response.status_code})"
+            f"Failed to get price prediction "
+            f"({response.status_code})"
         )
 
     return response.json()
+
+
+# ==========================================
+# AI ALTERNATIVES
+# ==========================================
 
 def get_alternatives(product_id):
 
@@ -102,11 +154,18 @@ def get_alternatives(product_id):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to get alternatives ({response.status_code})"
+            f"Failed to get alternatives "
+            f"({response.status_code})"
         )
 
     return response.json()
+
+
+# ==========================================
+# AI SHOPPING CHAT
+# ==========================================
 
 def shopping_chat(message):
 
@@ -118,8 +177,10 @@ def shopping_chat(message):
     )
 
     if not response.ok:
+
         raise Exception(
-            f"Failed to get AI response ({response.status_code})"
+            f"Failed to get AI response "
+            f"({response.status_code})"
         )
 
     return response.json()

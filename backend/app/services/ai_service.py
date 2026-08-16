@@ -686,12 +686,20 @@ Return only JSON.
 
 def shopping_chat(user_query: str):
 
+    # --------------------------------------
+    # Get products from MongoDB
+    # --------------------------------------
+
     products = list(
         db["products"].find(
             {},
             {"_id": 0}
         )
     )
+
+    # --------------------------------------
+    # Ask AI to select products
+    # --------------------------------------
 
     prompt = f"""
 You are NexCart AI Shopping Assistant.
@@ -707,13 +715,21 @@ User Question:
 Analyze the user's requirements carefully.
 
 If the user is asking for product recommendations:
+
 - recommend only products from the catalog
-- consider budget, category, rating and specifications
-- explain why each recommended product is suitable
+- consider budget
+- consider category
+- consider rating
+- consider specifications
+- explain why each product is suitable
 - mention price and rating
 - recommend up to 3 products
 
-If the user is asking a general shopping question, answer naturally.
+If the user is asking a general shopping question:
+
+- answer naturally
+- use only information from the catalog
+- do not invent products
 
 Respond ONLY in valid JSON.
 
@@ -737,13 +753,19 @@ For a general question use:
 }}
 
 IMPORTANT:
+
 - Do not invent products.
 - Product names must exactly match the catalog.
 - Only recommend products that exist in the catalog.
+- Recommend a maximum of 3 products.
 - Return ONLY valid JSON.
 - Do not use markdown.
 - Do not use ```json.
 """
+
+    # --------------------------------------
+    # Call Groq
+    # --------------------------------------
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -756,14 +778,162 @@ IMPORTANT:
         temperature=0.3,
     )
 
-    raw_response = response.choices[0].message.content
+    raw_response = (
+        response.choices[0].message.content
+    )
+
+    # --------------------------------------
+    # Parse AI response
+    # --------------------------------------
 
     try:
-        return json.loads(raw_response)
 
-    except json.JSONDecodeError:
+        # Remove accidental markdown fences
+        content = raw_response.strip()
+
+        if content.startswith("```json"):
+            content = content[7:]
+
+        elif content.startswith("```"):
+            content = content[3:]
+
+        if content.endswith("```"):
+            content = content[:-3]
+
+        content = content.strip()
+
+        try:
+
+            ai_result = json.loads(
+                content
+            )
+
+        except json.JSONDecodeError:
+
+            # Try extracting JSON object
+            start_index = content.find("{")
+            end_index = content.rfind("}")
+
+            if (
+                start_index == -1
+                or end_index == -1
+                or end_index <= start_index
+            ):
+                raise ValueError(
+                    "AI did not return valid JSON."
+                )
+
+            json_text = content[
+                start_index:end_index + 1
+            ]
+
+            ai_result = json.loads(
+                json_text
+            )
+
+    except Exception as error:
+
+        print(
+            f"Shopping chat AI error: {error}"
+        )
 
         return {
             "response": raw_response,
             "recommended_products": []
         }
+
+    # --------------------------------------
+    # Get AI recommendations
+    # --------------------------------------
+
+    ai_recommendations = ai_result.get(
+        "recommended_products",
+        []
+    )
+
+    if not isinstance(
+        ai_recommendations,
+        list
+    ):
+        ai_recommendations = []
+
+    # --------------------------------------
+    # Match AI recommendations with
+    # actual MongoDB products
+    # --------------------------------------
+
+    recommended_products = []
+
+    for recommendation in ai_recommendations:
+
+        if not isinstance(
+            recommendation,
+            dict
+        ):
+            continue
+
+        recommended_name = (
+            recommendation.get(
+                "name",
+                ""
+            )
+            .strip()
+            .lower()
+        )
+
+        reason = recommendation.get(
+            "reason",
+            ""
+        )
+
+        if not recommended_name:
+            continue
+
+        # Search actual catalog
+        for product in products:
+
+            product_name = (
+                product.get(
+                    "name",
+                    ""
+                )
+                .strip()
+                .lower()
+            )
+
+            if (
+                product_name
+                == recommended_name
+            ):
+
+                product_data = product.copy()
+
+                # Add AI explanation
+                product_data[
+                    "ai_reason"
+                ] = reason
+
+                recommended_products.append(
+                    product_data
+                )
+
+                break
+
+        # Maximum 3 products
+        if len(
+            recommended_products
+        ) >= 3:
+            break
+
+    # --------------------------------------
+    # Return response + actual products
+    # --------------------------------------
+
+    return {
+        "response": ai_result.get(
+            "response",
+            "Sorry, I couldn't generate a response."
+        ),
+        "recommended_products":
+            recommended_products,
+    }

@@ -22,6 +22,7 @@ products = [
             "Battery life is good but could be better.",
             "Very fast and premium design."
         ]
+        
     },
     {
         "id": 2,
